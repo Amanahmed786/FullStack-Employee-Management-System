@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ledger — Employee Records</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #16213E;
+    --navy-deep: #0F1729;
+    --cream: #F5F1E8;
+    --cream-line: #E7E0D0;
+    --brass: #B08D57;
+    --brass-light: #D4B483;
+    --ink: #232323;
+    --sage: #5B7F5E;
+    --sage-bg: #E6EEE6;
+    --rust: #A63D2F;
+    --rust-bg: #F5E4E0;
+    --line: rgba(35,35,35,0.12);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--navy);
+    background-image:
+      radial-gradient(circle at 8% 8%, rgba(176,141,87,0.09), transparent 38%),
+      radial-gradient(circle at 92% 85%, rgba(176,141,87,0.07), transparent 38%);
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  header {
+    padding: 48px 40px 28px;
+    text-align: center;
+    color: var(--cream);
+  }
+
+  header .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--brass-light);
+    margin-bottom: 10px;
+  }
+
+  header h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 46px;
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+
+  header p {
+    font-size: 14px;
+    color: rgba(245,241,232,0.6);
+    margin-top: 8px;
+  }
+
+  #status-line {
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: rgba(245,241,232,0.5);
+    margin-bottom: 20px;
+    min-height: 16px;
+  }
+
+  main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 32px 80px;
+  }
+
+  /* --- Intake panel --- */
+  .intake {
+    background: var(--cream);
+    border-radius: 4px;
+    padding: 26px 30px;
+    margin-bottom: 40px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+    position: relative;
+    border-top: 4px solid var(--brass);
+  }
+
+  .intake::before {
+    content: "NEW RECORD";
+    position: absolute;
+    top: -13px;
+    left: 30px;
+    background: var(--brass);
+    color: var(--navy-deep);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    padding: 3px 10px;
+    border-radius: 3px;
+  }
+
+  .intake-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .field label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(35,35,35,0.5);
+    margin-bottom: 6px;
+  }
+
+  .field input {
+    width: 100%;
+    border: none;
+    border-bottom: 2px solid var(--line);
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    padding: 6px 2px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus { border-color: var(--brass); }
+
+  .field input.invalid { border-color: var(--rust); }
+
+  .field-error {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--rust);
+    margin-top: 5px;
+    min-height: 14px;
+  }
+
+  td input.invalid { border-color: var(--rust); }
+
+  .intake-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  button.stamp {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: var(--navy-deep);
+    color: var(--cream);
+    border: none;
+    padding: 12px 26px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.2s;
+  }
+
+  button.stamp:hover { background: var(--brass); color: var(--navy-deep); transform: translateY(-1px); }
+
+  /* --- Ledger table --- */
+  .ledger-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    color: var(--cream);
+    margin-bottom: 16px;
+  }
+
+  .ledger-label h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 23px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .ledger-label span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: rgba(245,241,232,0.5);
+  }
+
+  .ledger {
+    background: var(--cream);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 16px 32px rgba(0,0,0,0.25);
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(35,35,35,0.5);
+    padding: 16px 20px;
+    border-bottom: 2px solid var(--brass);
+    background: #EFE9DC;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--cream-line);
+    transition: background 0.15s;
+  }
+
+  tbody tr:hover { background: #EFE9DC55; }
+
+  tbody tr.editing { background: #FBF8F1; }
+
+  td {
+    padding: 14px 20px;
+    font-size: 14.5px;
+    vertical-align: middle;
+  }
+
+  td.id-cell {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--brass);
+    width: 70px;
+  }
+
+  td input {
+    width: 100%;
+    border: none;
+    border-bottom: 2px solid var(--brass);
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 14.5px;
+    padding: 4px 2px;
+    outline: none;
+  }
+
+  .actions-cell {
+    display: flex;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  button.act {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 1.5px solid transparent;
+    padding: 7px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    background: none;
+  }
+
+  button.edit-btn { border-color: var(--brass); color: var(--brass); }
+  button.edit-btn:hover { background: var(--brass); color: var(--navy-deep); }
+
+  button.save-btn { border-color: var(--sage); color: var(--sage); }
+  button.save-btn:hover { background: var(--sage); color: var(--cream); }
+
+  button.cancel-btn { border-color: rgba(35,35,35,0.3); color: rgba(35,35,35,0.5); }
+  button.cancel-btn:hover { background: rgba(35,35,35,0.1); }
+
+  button.delete-btn { border-color: var(--rust); color: var(--rust); }
+  button.delete-btn:hover { background: var(--rust); color: var(--cream); }
+
+  .empty-row td {
+    text-align: center;
+    padding: 50px 20px;
+    color: rgba(35,35,35,0.45);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+
+  @media (max-width: 720px) {
+    .intake-grid { grid-template-columns: repeat(2, 1fr); }
+    header h1 { font-size: 34px; }
+    .ledger { overflow-x: auto; }
+    table { min-width: 640px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Internal Directory · Full Records</div>
+  <h1>The Ledger</h1>
+  <p>Create, read, update, and retire employee records — all from one page.</p>
+</header>
+
+<div id="status-line">connecting to backend…</div>
+
+<main>
+  <section class="intake">
+    <div class="intake-grid">
+      <div class="field">
+        <label for="in-name">Full name</label>
+        <input id="in-name" type="text" placeholder="Aman Sharma">
+        <div class="field-error" id="err-in-name"></div>
+      </div>
+      <div class="field">
+        <label for="in-phone">Phone</label>
+        <input id="in-phone" type="text" placeholder="98765 43210">
+        <div class="field-error" id="err-in-phone"></div>
+      </div>
+      <div class="field">
+        <label for="in-email">Email</label>
+        <input id="in-email" type="email" placeholder="name@company.com">
+        <div class="field-error" id="err-in-email"></div>
+      </div>
+      <div class="field">
+        <label for="in-id">ID (optional)</label>
+        <input id="in-id" type="number" placeholder="auto if blank">
+        <div class="field-error"></div>
+      </div>
+    </div>
+    <div class="intake-actions">
+      <button class="stamp" onclick="createEmployee()">File Record</button>
+    </div>
+  </section>
+
+  <div class="ledger-label">
+    <h2>Current staff</h2>
+    <span id="count-label">0 on file</span>
+  </div>
+
+  <div class="ledger">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <tr class="empty-row"><td colspan="5">Loading roster…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+  // Change this if your Spring Boot app runs on a different host/port.
+  const API_BASE = "http://localhost:8080";
+
+  const tableBody = document.getElementById('table-body');
+  const statusLine = document.getElementById('status-line');
+  const countLabel = document.getElementById('count-label');
+
+  let currentEmployees = [];
+  let editingId = null;
+
+  function setStatus(msg, isError = false) {
+    statusLine.textContent = msg;
+    statusLine.style.color = isError ? '#E08674' : 'rgba(245,241,232,0.5)';
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str ?? '';
+    return div.innerHTML;
+  }
+
+  const PHONE_PATTERN = /^[6-9]\d{9}$/;
+  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // Validates the three editable fields; returns { name: 'error msg', ... } for any that fail.
+  function validateFields(name, phone, email) {
+    const errors = {};
+    if (!name) errors.name = 'Name is required';
+    if (!phone) errors.phone = 'Phone number is required';
+    else if (!PHONE_PATTERN.test(phone)) errors.phone = 'Enter a valid 10-digit number';
+    if (!email) errors.email = 'Email is required';
+    else if (!EMAIL_PATTERN.test(email)) errors.email = 'Enter a valid email address';
+    return errors;
+  }
+
+  function clearIntakeErrors() {
+    ['name', 'phone', 'email'].forEach(f => {
+      document.getElementById(`err-in-${f}`).textContent = '';
+      document.getElementById(`in-${f}`).classList.remove('invalid');
+    });
+  }
+
+  function showIntakeErrors(errors) {
+    clearIntakeErrors();
+    Object.entries(errors).forEach(([field, message]) => {
+      const errEl = document.getElementById(`err-in-${field}`);
+      const inputEl = document.getElementById(`in-${field}`);
+      if (errEl) errEl.textContent = message;
+      if (inputEl) inputEl.classList.add('invalid');
+    });
+  }
+
+  // Maps a server-side validation error body (field -> message) onto the intake form.
+  function applyServerErrors(serverErrors) {
+    const mapped = {};
+    Object.entries(serverErrors).forEach(([field, message]) => { mapped[field] = message; });
+    showIntakeErrors(mapped);
+  }
+
+  async function fetchEmployees() {
+    try {
+      setStatus('syncing roster…');
+      const res = await fetch(`${API_BASE}/employees`);
+      if (!res.ok) throw new Error(`Server responded ${res.status}`);
+      currentEmployees = await res.json();
+      editingId = null;
+      renderTable();
+      setStatus(`connected · last synced ${new Date().toLocaleTimeString()}`);
+    } catch (err) {
+      tableBody.innerHTML = `<tr class="empty-row"><td colspan="5">Could not reach the backend at ${API_BASE}.<br>Make sure the Spring Boot app is running and CORS is enabled.</td></tr>`;
+      setStatus('connection failed — see console', true);
+      console.error(err);
+    }
+  }
+
+  function renderTable() {
+    countLabel.textContent = `${currentEmployees.length} on file`;
+
+    if (!currentEmployees.length) {
+      tableBody.innerHTML = `<tr class="empty-row"><td colspan="5">No employees filed yet. Add the first record above.</td></tr>`;
+      return;
+    }
+
+    tableBody.innerHTML = currentEmployees.map(emp => {
+      if (emp.id === editingId) {
+        return `
+          <tr class="editing" data-id="${emp.id}">
+            <td class="id-cell">#${emp.id}</td>
+            <td><input type="text" id="edit-name-${emp.id}" value="${escapeHtml(emp.name)}"></td>
+            <td><input type="text" id="edit-phone-${emp.id}" value="${escapeHtml(emp.phone)}"></td>
+            <td><input type="email" id="edit-email-${emp.id}" value="${escapeHtml(emp.email)}"></td>
+            <td class="actions-cell">
+              <button class="act save-btn" onclick="saveEdit(${emp.id})">Save</button>
+              <button class="act cancel-btn" onclick="cancelEdit()">Cancel</button>
+            </td>
+          </tr>`;
+      }
+      return `
+        <tr data-id="${emp.id}">
+          <td class="id-cell">#${emp.id}</td>
+          <td>${escapeHtml(emp.name)}</td>
+          <td>${escapeHtml(emp.phone)}</td>
+          <td>${escapeHtml(emp.email)}</td>
+          <td class="actions-cell">
+            <button class="act edit-btn" onclick="startEdit(${emp.id})">Edit</button>
+            <button class="act delete-btn" onclick="deleteEmployee(${emp.id})">Delete</button>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  function startEdit(id) {
+    editingId = id;
+    renderTable();
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    renderTable();
+  }
+
+  function clearEditErrors(id) {
+    ['name', 'phone', 'email'].forEach(f => {
+      const el = document.getElementById(`edit-${f}-${id}`);
+      if (el) el.classList.remove('invalid');
+    });
+  }
+
+  async function saveEdit(id) {
+    const nameEl = document.getElementById(`edit-name-${id}`);
+    const phoneEl = document.getElementById(`edit-phone-${id}`);
+    const emailEl = document.getElementById(`edit-email-${id}`);
+    const name = nameEl.value.trim();
+    const phone = phoneEl.value.trim();
+    const email = emailEl.value.trim();
+
+    clearEditErrors(id);
+    const errors = validateFields(name, phone, email);
+    if (Object.keys(errors).length) {
+      if (errors.name) nameEl.classList.add('invalid');
+      if (errors.phone) phoneEl.classList.add('invalid');
+      if (errors.email) emailEl.classList.add('invalid');
+      setStatus(Object.values(errors)[0], true);
+      return;
+    }
+
+    try {
+      setStatus('saving changes…');
+      const res = await fetch(`${API_BASE}/employees/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, email })
+      });
+
+      if (res.status === 400) {
+        const serverErrors = await res.json();
+        if (serverErrors.name) nameEl.classList.add('invalid');
+        if (serverErrors.phone) phoneEl.classList.add('invalid');
+        if (serverErrors.email) emailEl.classList.add('invalid');
+        setStatus(Object.values(serverErrors)[0] || 'backend rejected the update', true);
+        return;
+      }
+      if (!res.ok) throw new Error(`Server responded ${res.status}`);
+      await fetchEmployees();
+    } catch (err) {
+      setStatus('could not save changes — see console', true);
+      console.error(err);
+    }
+  }
+
+  async function createEmployee() {
+    const name = document.getElementById('in-name').value.trim();
+    const phone = document.getElementById('in-phone').value.trim();
+    const email = document.getElementById('in-email').value.trim();
+    const idVal = document.getElementById('in-id').value.trim();
+
+    // Client-side check first — catches most mistakes instantly, no network round trip needed.
+    const errors = validateFields(name, phone, email);
+    if (Object.keys(errors).length) {
+      showIntakeErrors(errors);
+      setStatus('fix the highlighted fields before filing', true);
+      return;
+    }
+    clearIntakeErrors();
+
+    const payload = { name, phone, email };
+    if (idVal) payload.id = Number(idVal);
+
+    try {
+      setStatus('filing record…');
+      const res = await fetch(`${API_BASE}/employees`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.status === 400) {
+        // Backend validation rejected it — show exactly what it flagged.
+        const serverErrors = await res.json();
+        applyServerErrors(serverErrors);
+        setStatus('backend rejected the record — see highlighted fields', true);
+        return;
+      }
+      if (!res.ok) throw new Error(`Server responded ${res.status}`);
+
+      document.getElementById('in-name').value = '';
+      document.getElementById('in-phone').value = '';
+      document.getElementById('in-email').value = '';
+      document.getElementById('in-id').value = '';
+      clearIntakeErrors();
+      await fetchEmployees();
+    } catch (err) {
+      setStatus('could not file record — see console', true);
+      console.error(err);
+    }
+  }
+
+  async function deleteEmployee(id) {
+    try {
+      setStatus('removing record…');
+      const res = await fetch(`${API_BASE}/employees/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Server responded ${res.status}`);
+      await fetchEmployees();
+    } catch (err) {
+      setStatus('could not remove record — see console', true);
+      console.error(err);
+    }
+  }
+
+  // Clear an intake field's error the moment the user starts fixing it.
+  ['in-name', 'in-phone', 'in-email'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      const field = id.replace('in-', '');
+      document.getElementById(`err-in-${field}`).textContent = '';
+      document.getElementById(id).classList.remove('invalid');
+    });
+  });
+
+  fetchEmployees();
+</script>
+
+</body>
+</html>
